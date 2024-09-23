@@ -1,0 +1,56 @@
+lockfileVersion: '6.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+dependencies:
+  '@types/sortablejs':
+    specifier: ^1.15.8
+    version: 1.15.8
+  mu-widget:
+    specifier: ^2.18.0
+    version: 2.18.0
+  sortablejs:
+    specifier: ^1.15.3
+    version: 1.15.3
+  tom-select:
+    specifier: ^2.3.1
+    version: 2.3.1
+
+packages:
+
+  /@orchidjs/sifter@1.0.3:
+    resolution: {integrity: sha512-zCZbwKegHytfsPm8Amcfh7v/4vHqTAaOu6xFswBYcn8nznBOuseu6COB2ON7ez0tFV0mKL0nRNnCiZZA+lU9/g==}
+    dependencies:
+      '@orchidjs/unicode-variants': 1.0.4
+    dev: false
+
+  /@orchidjs/unicode-variants@1.0.4:
+    resolution: {integrity: sha512-NvVBRnZNE+dugiXERFsET1JlKZfM5lJDEpSMilKW4bToYJ7pxf0Zne78xyXB2ny2c2aHfJ6WLnz1AaTNHAmQeQ==}
+    dev: false
+
+  /@types/sortablejs@1.15.8:
+    resolution: {integrity: sha512-b79830lW+RZfwaztgs1aVPgbasJ8e7AXtZYHTELNXZPsERt4ymJdjV4OccDbHQAvHrCcFpbF78jkm0R6h/pZVg==}
+    dev: false
+
+  /mu-widget@2.18.0:
+    resolution: {integrity: sha512-Y6BQ9Ka7cXcjjPJKBox0lnAmkdf5QxvQHzBJM8N3a4VwfErR45frIIP4moUrjOZHxAomaRnoXKOhaDVvsEc+pg==}
+    dependencies:
+      readline-promise: 1.0.5
+    dev: false
+
+  /readline-promise@1.0.5:
+    resolution: {integrity: sha512-rlqCVq6aaHxJCOJ0CzDHUi9Kj9JPBpnGFkdl6JefVjy0O/dGuBP+CovaHfaftUwElUlIeUs0E/a3Z5y45vRTVA==}
+    dev: false
+
+  /sortablejs@1.15.3:
+    resolution: {integrity: sha512-zdK3/kwwAK1cJgy1rwl1YtNTbRmc8qW/+vgXf75A7NHag5of4pyI6uK86ktmQETyWRH7IGaE73uZOOBcGxgqZg==}
+    dev: false
+
+  /tom-select@2.3.1:
+    resolution: {integrity: sha512-QS4vnOcB6StNGqX4sGboGXL2fkhBF2gIBB+8Hwv30FZXYPn0CyYO8kkdATRvwfCTThxiR4WcXwKJZ3cOmtI9eg==}
+    dependencies:
+      '@orchidjs/sifter': 1.0.3
+      '@orchidjs/unicode-variants': 1.0.4
+    dev: false

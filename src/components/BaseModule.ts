@@ -1,3 +1,4 @@
+
 import {MuWidget} from "mu-widget/lib/MuWidget";
 import {ColumnInfo, Table} from "mu-widget/lib/components/Table";
 import {BaseModuleTL, ButtonDef, ListResult, OrderBy} from "../adminTypes";
@@ -7,6 +8,9 @@ import {makeHtmlElement, withLoader} from "mu-widget/lib/utils/utils";
 import {ComponentBuilder} from "../services/ComponentBuilder";
 import {Triggers} from "mu-widget/lib/utils/Triggers";
 import {SideModal} from "mu-widget/lib/components/SideModal";
+import {UiAdmin} from "./UiAdmin";
+import {UiCommandsCell} from "./UiCommandsCell";
+import {MuWidgetClass} from "../setup";
 
 export type ModuleMetaData = {
     name: string;
@@ -17,7 +21,7 @@ export type ModuleMetaData = {
     widgetName?: string;
 };
 
-export abstract class BaseModule extends MuWidget {
+export abstract class BaseModule extends MuWidgetClass {
 
     // @ts-ignore
     public moduleMetaData: ModuleMetaData;
@@ -31,10 +35,12 @@ export abstract class BaseModule extends MuWidget {
 
     public abstract tl: BaseModuleTL;
 
-    buttons: ButtonDef[] = [
-        { label: "Přidat", mu: "bAdd", cssClass: "primary" },
-        { label: "Znovu načíst", mu: "bReload", cssClass: "default" }
+    public static defaultButtons = [
+        { label: "Přidat", mu: "bAdd", icon: 'add' },
+        { label: "Znovu načíst", mu: "bReload", icon: 'reload' }
     ];
+
+    buttons: ButtonDef[] = [ ...BaseModule.defaultButtons ];
 
     protected filter: any = {};
 
@@ -51,17 +57,21 @@ export abstract class BaseModule extends MuWidget {
     }
 
     beforeIndex() {
+        this.moduleInit();
         const cb = new ComponentBuilder();
         this.muAppendContent(`
-            <div class="navbar navbar-expand-lg bg-light">`
-            + (this.buttons.length
-                ? '<div class="toolbox flex-grow-1">' + this.buttons.map(btn => makeHtmlElement('span', {
+            <div class="navbar navbar-expand-lg bg-light"><div class="toolbox flex-grow-1" mu="buttonContainer">`
+            /* + (this.buttons.length
+                ? this.buttons.map(btn => makeHtmlElement('span', {
                     mu: btn.mu ?? null,
                     'class': 'btn btn-' + btn.cssClass
-                }, btn.label).outerHTML).join('') + '</div><span mu="navbarTitle" class="navbar-text"></span>'
-                : '')
-            + `</div>`
+                }, btn.label).outerHTML).join('')
+                : '') */
+
+            + cb.buildTableCommands(this.buttons)
+            + `</div><span mu="navbarTitle" class="navbar-text"></span></div>`
         );
+        this.moduleBeforeIndex();
         if (this.useTable) {
             this.muAppendContent(
                 `<table class="table" mu="table:Table">
@@ -70,17 +80,37 @@ export abstract class BaseModule extends MuWidget {
             );
 
         }
-        UiTriggers.addHandler(
+        Triggers.addHandler(
             this.moduleMetaData.name + 'Changed',
             () => this.loadData()
         );
     }
 
+    protected toNav(el: HTMLElement|string|((HTMLElement|string)[])) {
+        if (Array.isArray(el)) {
+            for (const el1 of el) {
+                this.toNav(el1);
+            }
+        } else {
+            if (typeof el === "string") {
+                el = this.ui[el];
+            }
+            this.ui.buttonContainer.appendChild(el);
+        }
+    }
+
     async afterIndex() {
+        await this.moduleAfterIndex();
         this.ui.navbarTitle.textContent = this.moduleMetaData.label;
         if (this.useTable) await this.setupTable(this.table)
         await this.loadData();
     }
+
+    protected async moduleAfterIndex(): Promise<void> { }
+
+    protected moduleBeforeIndex(): void { }
+
+    protected moduleInit(): void { }
 
     table_order(ev: any, orderColumn: string, orderDirection: "asc"|"desc") {
         this.orderBy = { field: orderColumn, dir: orderDirection };
@@ -88,16 +118,18 @@ export abstract class BaseModule extends MuWidget {
     }
 
     async loadData() {
+        UiAdmin.instance.router.pushUpdate(null, {
+            pageOrder: this.pageOrder,
+            filter: this.filter ? JSON.stringify(this.filter) : null,
+        });
         await withLoader(this.container, async () => {
             const data = await this.getData(
                 this.filter,
                 this.orderBy,
-                this.pager.currentItemFrom,
-                this.pager.itemPerPage,
+                this.pager ? this.pager.currentItemFrom : 0,
+                this.pager ? this.pager.itemPerPage : 0,
             );
-            this.table.data = data.items;
-            this.table.render();
-            this.pager.setItemCount(data.totalCount);
+            await this.renderItems(data);
         });
     }
 
@@ -107,6 +139,7 @@ export abstract class BaseModule extends MuWidget {
 
     item_edit(row: any) {
         this.openEditor().load(row.id);
+        this.muParent.router.pushUpdate(null, { id: row.id });
     }
 
     pager_changePage() {
@@ -128,13 +161,39 @@ export abstract class BaseModule extends MuWidget {
     get table(): Table { return this.muNamedWidget.table as unknown as Table; }
     get pager(): Pager { return this.muNamedWidget.pager as unknown as Pager; }
 
-    protected commandColumn(buttonDefs: ButtonDef[]): ColumnInfo {
+    protected commandColumn(
+        buttonDefs: ButtonDef[],
+        afterRender: ((widget: UiCommandsCell, row: any) => void)|null = null,
+        widgetParams: Partial<InstanceType<typeof UiCommandsCell>>&Record<string, any> = {},
+    ): ColumnInfo {
         return new ColumnInfo({
             widgetName: 'UiCommandsCell',
-            widgetParams: { buttons: buttonDefs },
+            widgetParams: { buttons: buttonDefs, afterRender, ...widgetParams },
             orderable: false,
             filterable: false,
         })
     }
 
+    protected async renderItems(data: any) {
+        this.table.data = data.items;
+        this.table.render();
+        this.pager.setItemCount(data.totalCount);
+    }
+
+    get pageOrder(): string {
+        return `${this.pager?.currentPageNum || '0'}-${this.orderBy.field}-${this.orderBy.dir}`;
+    }
+
+    set pageOrder(str: string) {
+        if (this.pager) {
+            const strp = str.split('-');
+            this.orderBy.field = strp[1] || 'id';
+            //@ts-ignore
+            this.orderBy.dir = strp[2] || 'asc';
+            this.pager.currentPageNum = parseInt(strp[0] || '0');
+        } else {
+            // widget not ready, call after index
+            this.muOnAfterIndex.push(() => this.pageOrder = str);
+        }
+    }
 }

@@ -1,11 +1,12 @@
 import {MuWidget} from "mu-widget/lib/MuWidget";
 import {BaseModule, ModuleMetaData} from "./BaseModule";
-import {PR} from "../classRegister";
-import {AnyElement} from "mu-widget/lib/MuWidget";
 import { Triggers } from "mu-widget/lib/utils/Triggers";
 import { UiFlashContainer } from "mu-widget/lib/components/UiFlash";
+import {MuRouter} from "mu-widget/lib/MuRouter";
+import {TypeFromOptional} from "../adminTypes";
+import {MuWidgetClass} from "../setup";
 
-export class UiAdmin extends MuWidget { // PR.muWidget.MuWidget {
+export class UiAdmin extends MuWidgetClass { // PR.muWidget.MuWidget {
     modules: ModuleMetaData[] = [];
     modulesByName: Record<string, ModuleMetaData> = {};
     static instance: UiAdmin;
@@ -13,13 +14,15 @@ export class UiAdmin extends MuWidget { // PR.muWidget.MuWidget {
     public static Triggers : typeof Triggers;
     static UiFlashContainer: typeof UiFlashContainer;
 
+    public router: MuRouter = new MuRouter();
+
     beforeIndex() {
         UiAdmin.instance = this;
         this.muAppendContent(`
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-md-2">
-                        <h2>Nabídka</h2>
+                    <div class="col-md-2 side-menu">
+                        <h2>Administrace</h2>
                         <ul mu="menuitems" class="list-group">
                             <li class="list-group-item" mu=":AdminMenuItem@menuItem"><a mu="link" class="a w-100"></a></li>
                         </ul>
@@ -29,13 +32,22 @@ export class UiAdmin extends MuWidget { // PR.muWidget.MuWidget {
             </div>
             <div mu="flashContainer:UiFlashContainer"></div>
         `);
-        // @ts-ignore
-        // SideModal.container = this.container;
-        for (const widgetName in UiAdmin.muWidget) {
+
+        this.router.addRoute('defaultModule', '/admin/<module></po-+pageOrder=0-id-asc></e-+id=>', ev => {
             // @ts-ignore
-            if (UiAdmin.muWidget.widgetClasses[widgetName].isModule) {
+            this.loadModule(ev.parameters.module, { pageOrder: ev.parameters.pageOrder });
+            if (ev.parameters.id) {
                 // @ts-ignore
-                const moduleMetaData = { widgetName, ...UiAdmin.muWidget.widgetClasses[widgetName].moduleMetaData };
+                this.currentModule.item_edit({ id: parseInt(ev.parameters.id) });
+            }
+        });
+
+        const widgetClasses = MuWidget.widgetClasses;
+        for (const widgetName in widgetClasses) {
+            // @ts-ignore
+            if (widgetClasses[widgetName].isModule) {
+                // @ts-ignore
+                const moduleMetaData = { widgetName, ...widgetClasses[widgetName].moduleMetaData };
                 this.modules.push(moduleMetaData);
                 this.modulesByName[moduleMetaData.name] = moduleMetaData;
             }
@@ -52,14 +64,17 @@ export class UiAdmin extends MuWidget { // PR.muWidget.MuWidget {
                 { module }
             )
         }
-        this.loadModule(this.modules[0].name);
+        new Promise(() => this.router.route());
     }
 
-    public loadModule(moduleName: string) {
-        const cWidget = new UiAdmin.MuWidget(this.ui.moduleContainer);
+    // @ts-ignore
+    protected currentModule: BaseModule;
+
+    public loadModule(moduleName: string, params: TypeFromOptional<BaseModule> = {}) {
+        const cWidget = new MuWidget(this.ui.moduleContainer);
         this.ui.moduleContainer.innerHTML = '';
         // @ts-ignore
-        const widget = cWidget.muActivateWidget(
+        this.currentModule = cWidget.muActivateWidget(
             this.ui.moduleContainer,
             {
                 // @ts-ignore
@@ -68,8 +83,10 @@ export class UiAdmin extends MuWidget { // PR.muWidget.MuWidget {
             {
                 muParent: this,
                 moduleMetaData: this.modulesByName[moduleName],
+                ...params,
             }
         ) as BaseModule;
+        this.router.pushUpdate('defaultModule', { module: moduleName });
     }
 }
 
@@ -81,9 +98,10 @@ export class AdminMenuItem extends MuWidget {
 
     afterIndex() {
         this.ui.link.textContent = this.module.label;
+        this.muParent.router.prepareAnchor(this.ui.link, 'defaultModule', { module: this.module.name });
     }
 
-    link_click() {
+    /* link_click() {
         this.muParent.loadModule(this.module.name);
-    }
+    } */
 }

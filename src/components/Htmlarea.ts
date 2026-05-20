@@ -1,7 +1,7 @@
-import {MuWidget} from "mu-widget/lib/MuWidget";
 import {loadScript} from "mu-widget/lib/utils/utils";
+import {MuWidgetClass} from "../setup";
 
-export class Htmlarea extends MuWidget {
+export class Htmlarea extends MuWidgetClass {
 	public disabled : boolean = false;
 
 	protected editor: any;
@@ -78,7 +78,7 @@ export class Htmlarea extends MuWidget {
 	}
 
 	// @ts-ignore
-	private initValue: string;
+	private initValue: string = "";
 
 	muBindData(srcData: any) {
 		this.initValue = srcData;

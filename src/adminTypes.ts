@@ -19,7 +19,7 @@ export type FieldDef = {
     colSize?: string|string[];
 }|string;
 
-export type FieldType = "text" | "html" | "number"|"email"|"tel"|"url"|"select";
+export type FieldType = "text" | "html" | "number"|"email"|"tel"|"url"|"select"|"checkbox"|"json-text";
 
 export interface BaseModuleTL {
 
@@ -38,7 +38,9 @@ export type ListResult<T> = {
 }
 
 export type ButtonDef = {
-    label: string,
+    label?: string,
+    title?: string,
+    icon?: string,
     mu?: string,
     cssClass?: string|string[],
     command?: string,

@@ -4,9 +4,10 @@ import {TomCreate, TomLoadCallback} from "tom-select/dist/types/types";
 import {MuWidget} from "mu-widget/lib/MuWidget";
 import {arrayDiff} from "mu-widget/lib/utils/utils";
 import {TypeFromOptional} from "../adminTypes";
+import {MuWidgetClass} from "../setup";
 
 
-export class UiTomSelect extends MuWidget
+export class UiTomSelect extends MuWidgetClass
 {
 	public maxItems: number|null = null;
 	public valueField: string = "id";
@@ -20,6 +21,7 @@ export class UiTomSelect extends MuWidget
 	public newValuePrefix: string = "*";
 	private disableEvents: boolean = false;
 	public emptyLabel: string|null = "";
+	public options: (any|string|{id:string,name:string})[] = [];
 
 	public get value() {
 		return this.tom?.getValue();
@@ -198,6 +200,18 @@ export class UiTomSelect extends MuWidget
 				newOpt[this.valueField] = newV;
 				this.tom.options[newV] = newOpt;
 				this.tom.items = this.tom.items.map(iv => iv == v ? newV : iv);
+			}
+		}
+		if (this.options.length) {
+			for (const option of this.options) {
+				let text = '', value = '';
+				if (typeof option === 'string') {
+					value = text = option;
+				} else {
+					value = option[this.valueField];
+					text = option[this.labelField];
+				}
+				(this.ui.input as unknown as HTMLSelectElement).add(new Option(text, value));
 			}
 		}
 		if ((this as any).optionLoader) opts.load = (escapeQuery: string, callback) => (this as any).optionLoader(escapeQuery, callback);

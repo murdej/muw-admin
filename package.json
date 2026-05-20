@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/sortablejs": "^1.15.8",
-    "mu-widget": "^2.18.0",
+    "mu-widget": "^2.18.1",
     "sortablejs": "^1.15.3",
     "tom-select": "^2.3.1"
   }

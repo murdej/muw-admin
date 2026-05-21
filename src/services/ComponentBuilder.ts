@@ -55,7 +55,7 @@ export class ComponentBuilder {
             const attrs: any = {};
             if (buttonDef.mu) attrs.mu = buttonDef.mu;
             attrs.class = this.joinCssClasses(buttonDef.cssClass || (buttonDef.label ? 'btn btn-link' : 'cursor-pointer'));
-            if (buttonDef.icon) attrs.class += ' ' + this.getClassName('iconPrefix') + (buttonDef.label ? 'before-' : '') + buttonDef.icon;
+            if (buttonDef.icon) attrs.class += ' ' + this.getClassName(buttonDef.label ? 'iconPrefixBefore' : 'iconPrefix') + buttonDef.icon;
             if (buttonDef.title) attrs.title = buttonDef.title;
             if (buttonDef.command) attrs['mu-click'] = 'command: ' + buttonDef.command;
             res += makeHtmlElement(
@@ -104,10 +104,11 @@ export class ComponentBuilder {
     }
 
     public static classNames: Record<ComponentClassNames, string> = {
-        iconPrefix: 'icon-',
+        iconPrefix: 'icon--',
+        iconPrefixBefore: 'icon-before--',
     };
 
     public classNames: Partial<Record<ComponentClassNames, string>> = {};
 }
 
-export type ComponentClassNames = "iconPrefix";
+export type ComponentClassNames = "iconPrefix"|"iconPrefixBefore";
